@@ -1,0 +1,4 @@
+bitarray==0.8.1
+py==1.4.31
+pytest==3.0.3
+wsgiref==0.1.2
