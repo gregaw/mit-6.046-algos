@@ -1,5 +1,6 @@
 import abc
 import math
+import random
 
 
 class SkipList():
@@ -77,6 +78,34 @@ class Node():
 
         return first
 
+    @classmethod
+    def contains(cls, skips, value):
+        contains, path = Node.contains_tuple(skips, value)
+
+        return contains
+
+    @classmethod
+    def contains_tuple(cls, skips, value):
+
+        node = skips
+        last_node = node
+        path = []
+        while node:
+            path.append(node)
+            if node.value == value:
+                return True, path
+            elif node.value > value:
+                if last_node.follow_down:
+                    node = last_node.follow_down
+                    last_node = node
+                else:
+                    return False, path
+            else:
+                last_node = node
+                node = node.follow
+
+        return False, path
+
 
 class SkipListStatic(SkipList):
     """
@@ -106,20 +135,79 @@ class SkipListStatic(SkipList):
         raise NotImplementedError()
 
     def contains(self, value):
+        return Node.contains(self.skips, value)
 
-        node = self.skips
-        last_node = node
-        while node:
-            if node.value == value:
-                return True
-            elif node.value > value:
-                if last_node.follow_down:
-                    node = last_node.follow_down
-                    last_node = node
-                else:
-                    return False
-            else:
-                last_node = node
-                node = node.follow
 
-        return False
+class SkipListRandomised(SkipList):
+    """
+        insert, delete, contains: O(logn) with high probability
+
+    """
+
+    def __init__(self, values=[]):
+        self.skips = None
+        for value in values:
+            self.insert(value)
+
+    def contains(self, value):
+        return Node.contains(self.skips, value)
+
+    def remove(self, value):
+
+        raise NotImplementedError()
+
+    def insert(self, value):
+        """
+            recursively create a summary node with probability 1/2
+        :param value:
+        :return:
+        """
+
+        if not self.skips:
+            self.skips = Node(value, None, None)
+            return
+
+        contains, path = Node.contains_tuple(self.skips, value)
+
+        if value < path[0].value:
+
+            # inserting the smallest so far
+
+            self.skips = Node(value, self.skips, None)
+            current = self.skips
+            while current.follow.follow_down:
+                # invariant: all inserted at the current level
+                new_current = Node(value, current.follow.follow_down, None)
+                current.follow_down = new_current
+                current = new_current
+
+        elif value > path[-1].value:
+
+            # inserting the greatest so far
+
+            current = self.skips
+            while current.follow:
+                current = current.follow
+
+            current.follow = Node(value, None, None)
+            while current.follow_down:
+                current.follow_down.follow = Node(value, None, None)
+                current.follow.follow_down = current.follow_down.follow
+                current = current.follow_down
+        else:
+
+            # inserting in the middle
+
+            # last one's value > value
+            path = path[:-1]
+            path[-1].follow = Node(value, path[-1].follow, None)
+            last_inserted = path[-1].follow
+            for ix, current in reversed(list(enumerate(path[:-1]))):
+
+                # only going randomly high
+                if random.randint(0, 1) == 1:
+                    break
+
+                if current.follow_down == path[ix + 1]:
+                    current.follow = Node(value, current.follow, last_inserted)
+                    last_inserted = current.follow
