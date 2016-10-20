@@ -1,15 +1,3 @@
-class Edge:
-    def __init__(self, start, finish, weight):
-        self.weight = weight
-        self.finish = finish
-        self.start = start
-
-
-class Vertex:
-    def __init__(self, edges):
-        self.edges = edges
-
-
 def dynamic_shortest_path_all(vertices):
     """
         acyclic or non-negative
